@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}书猫 ShuMao{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <script src="{{ url_for('static', filename='hanzi-writer.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='hanzi_lookup.js') }}"></script>
+    <script src="{{ url_for('static', filename='handwriting.js') }}"></script>
+    <script>
+        // Initialize hanzi_lookup WASM
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.wasm_bindgen) {
+                wasm_bindgen("{{ url_for('static', filename='hanzi_lookup_bg.wasm') }}")
+                    .then(() => console.log("Hanzi Lookup WASM initialized"))
+                    .catch(console.error);
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div id="catboy-container"></div>
+
+    <div class="container" style="position: relative; z-index: 1;">
+        {% block content %}{% endblock %}
+
+        <footer>
+            <p>nya~ | <a href="https://cc-cedict.org/wiki/">CC-CEDICT</a> data</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('catboy-container');
+            const catboySrc = "{{ url_for('static', filename='logo.png') }}";
+            const numCatboys = 15; // Number of floating catboys
+
+            for (let i = 0; i < numCatboys; i++) {
+                createCatboy();
+            }
+
+            function createCatboy() {
+                const img = document.createElement('img');
+                img.src = catboySrc;
+                img.classList.add('floundering-catboy');
+
+                // Randomize properties
+                const size = 30 + Math.random() * 50; // Size between 30px and 80px
+                const left = Math.random() * 100; // Position 0-100% width
+                const duration = 10 + Math.random() * 20; // Animation 10-30s
+                const delay = Math.random() * -20; // Start at different times
+
+                img.style.width = `${size}px`;
+                img.style.left = `${left}vw`;
+                img.style.animationDuration = `${duration}s`;
+                img.style.animationDelay = `${delay}s`;
+
+                container.appendChild(img);
+            }
+        });
+    </script>
+</body>
+
+</html>

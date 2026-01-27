@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-top: 10vh;">
+    <header>
+        <a href="/" class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="ShuMao Logo" class="logo-img">
+            <h1 class="site-title">书猫 ShuMao</h1>
+        </a>
+    </header>
+
+    <div class="search-container">
+        <p class="tagline">The English-Chinese dictionary that meows back</p>
+        <form action="/search" method="get" class="search-form">
+            <div class="search-input-wrapper">
+                <input type="text" name="q" id="searchInput" placeholder="Search with Pinyin, English, or Hanzi"
+                    autofocus>
+                <button type="button" class="handwriting-toggle" id="hwToggle" title="Handwriting Recognition">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor"
+                            d="M3,17.25V21h3.75L17.81,9.94l-3.75-3.75L3,17.25z M20.71,7.04c0.39-0.39,0.39-1.02,0-1.41l-2.34-2.34 c-0.39-0.39-1.02-0.39-1.41,0l-1.83,1.83l3.75,3.75L20.71,7.04z" />
+                    </svg>
+                </button>
+                <div id="handwritingPanel" class="handwriting-panel" style="display: none;">
+                    <div class="handwriting-header">
+                        <div class="handwriting-candidates"></div>
+                        <div class="handwriting-controls">
+                            <button type="button" class="undo-btn">Undo</button>
+                            <button type="button" class="clear-btn">Clear</button>
+                            <button type="button" class="close-btn" title="Close">✕</button>
+                        </div>
+                    </div>
+                    <canvas id="hwCanvas" width="256" height="256"></canvas>
+                </div>
+            </div>
+            <button type="submit">Go</button>
+        </form>
+        <p><b>NOTE</b>: This website is under active development and only available as a test environment.</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hwToggle = document.getElementById('hwToggle');
+            const hwPanel = document.getElementById('handwritingPanel');
+            const searchInput = document.getElementById('searchInput');
+
+            if (hwToggle && hwPanel) {
+                hwToggle.onclick = () => {
+                    hwPanel.style.display = hwPanel.style.display === 'none' ? 'block' : 'none';
+                };
+
+                const closeBtn = hwPanel.querySelector('.close-btn');
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        hwPanel.style.display = 'none';
+                    };
+                }
+
+                initHandwriting('handwritingPanel', 'searchInput');
+            }
+        });
+    </script>
+
+</div>
+</div>
+{% endblock %}
