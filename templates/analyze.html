@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Sentence Analysis - 书猫 ShuMao{% endblock %}
+
+{% block content %}
+<header class="results-header">
+    <a href="/" class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="ShuMao Logo" class="logo-img">
+        <h1 class="site-title">书猫 ShuMao</h1>
+    </a>
+</header>
+
+<div class="analyze-container">
+    <h1 class="page-title">Sentence Analysis</h1>
+    <p class="page-subtitle">Break down Chinese sentences into words</p>
+
+    <form action="/analyze" method="get" class="analyze-form">
+        <textarea name="text" id="analyzeInput" rows="4" placeholder="我喜欢可爱的猫">{{ text }}</textarea>
+        <button type="submit" class="analyze-btn">Analyze</button>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const textarea = document.getElementById('analyzeInput');
+            const form = document.querySelector('.analyze-form');
+
+            textarea.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    form.submit();
+                }
+            });
+        });
+    </script>
+
+    {% if analyzed_segments %}
+    <div class="analysis-results">
+        <div class="sentence-display">
+            {% for segment in analyzed_segments %}
+            {% if segment.pos == 'space' %}
+            <span class="segment space">{{ segment.word }}</span>
+            {% else %}
+            <div class="segment-wrapper pos-{{ segment.pos[0] }}" tabindex="0">
+                <span class="segment-word">{{ segment.word }}</span>
+                <span class="segment-pos">{{ segment.pos }}</span>
+
+                <div class="segment-popup">
+                    <div class="popup-header">
+                        <span class="popup-word">{{ segment.word }}</span>
+                        <span class="popup-pinyin">{{ segment.pinyin }}</span>
+                    </div>
+                    <div class="popup-pos">Tag: {{ segment.pos }}</div>
+                    {% if segment.hsk_level > 0 %}
+                    <div class="popup-hsk">HSK {{ '7-9' if segment.hsk_level == 7 else segment.hsk_level }}</div>
+                    {% endif %}
+                    <div class="popup-defs">
+                        {% if segment.definitions %}
+                        <ul>
+                            {% for def in segment.definitions.split('/') %}
+                            {% if def %}<li>{{ def }}</li>{% endif %}
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span class="no-defs">No dictionary entry found.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Reuse header styles from results page if possible, but defining critical ones here */
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        margin-bottom: 2rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .logo-img {
+        height: 40px;
+        margin-right: 10px;
+    }
+
+    .site-title {
+        font-size: 1.5rem;
+        color: #333;
+        margin: 0;
+    }
+
+    .main-nav {
+        display: flex;
+        gap: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #666;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .nav-link:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    .nav-link.active {
+        color: #e74c3c;
+        background-color: #fceceb;
+    }
+
+    .analyze-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        text-align: center;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .analyze-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    textarea#analyzeInput {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 15px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-family: inherit;
+        resize: vertical;
+        transition: border-color 0.3s;
+    }
+
+    textarea#analyzeInput:focus {
+        border-color: #e74c3c;
+        outline: none;
+    }
+
+    .analyze-btn {
+        align-self: flex-end;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .analyze-btn:hover {
+        background-color: #c0392b;
+    }
+
+    .analyze-btn:active {
+        transform: scale(0.98);
+    }
+
+    .sentence-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        line-height: 1.5;
+        align-items: flex-end;
+    }
+
+    .segment-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .segment-wrapper:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .segment-word {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+
+    .segment-pos {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 2px;
+        text-transform: uppercase;
+    }
+
+    /* POS Coloring (Top border or color) */
+    .pos-n {
+        border-bottom: 3px solid #3498db;
+    }
+
+    /* Noun - Blue */
+    .pos-v {
+        border-bottom: 3px solid #e74c3c;
+    }
+
+    /* Verb - Red */
+    .pos-a {
+        border-bottom: 3px solid #f1c40f;
+    }
+
+    /* Adjective - Yellow */
+    .pos-r {
+        border-bottom: 3px solid #9b59b6;
+    }
+
+    /* Pronoun - Purple */
+    .pos-d {
+        border-bottom: 3px solid #2ecc71;
+    }
+
+    /* Adverb - Green */
+    .pos-p {
+        border-bottom: 3px solid #e67e22;
+    }
+
+    /* Preposition - Orange */
+    .pos-c {
+        border-bottom: 3px solid #7f8c8d;
+    }
+
+    /* Conjunction - Gray */
+    .pos-u {
+        border-bottom: 3px solid #95a5a6;
+    }
+
+    /* Particle - Gray-ish */
+    .pos-x {
+        border-bottom: 3px solid transparent;
+    }
+
+    /* Others */
+
+    /* Popup Stying */
+    .segment-popup {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 250px;
+        background: white;
+        border: 1px solid #eee;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        z-index: 100;
+        margin-bottom: 10px;
+        pointer-events: none;
+        /* Let clicks pass through if needed, but usually we want to interact */
+    }
+
+    /* Show popup on hover or focus */
+    .segment-wrapper:hover .segment-popup,
+    .segment-wrapper:focus .segment-popup,
+    .segment-wrapper:focus-within .segment-popup {
+        display: block;
+    }
+
+    .popup-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+    }
+
+    .popup-word {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .popup-pinyin {
+        color: #888;
+    }
+
+    .popup-pos {
+        font-size: 0.8rem;
+        color: #666;
+        margin-bottom: 2px;
+    }
+
+    .popup-hsk {
+        font-size: 0.7rem;
+        background: #3498db;
+        color: white;
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-bottom: 5px;
+    }
+
+    .popup-defs ul {
+        margin: 0;
+        padding-left: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .popup-defs li {
+        margin-bottom: 3px;
+    }
+
+    .no-defs {
+        font-style: italic;
+        color: #999;
+    }
+
+    /* Triangle for popup */
+    .segment-popup::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -8px;
+        border-width: 8px;
+        border-style: solid;
+        border-color: white transparent transparent transparent;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}About - 书猫 ShuMao{% endblock %}
+
+{% block content %}
+<header class="results-header">
+    <a href="/" class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="ShuMao Logo" class="logo-img">
+        <h1 class="site-title">书猫 ShuMao</h1>
+    </a>
+</header>
+
+<div class="analyze-container">
+    <h1 class="page-title">About</h1>
+
+    <div class="about-content" style="line-height: 1.8; color: #444;">
+        <p><strong>ShuMao (书猫, lit. book cat)</strong> is an English-Chinese dictionary website inspired by MDBG.</p>
+
+        <p>Unlike most online dictionaries, ShuMao is open-source and does not rely on external network services,
+            allowing it to be self-hosted for privacy or reliability concerns. <a
+                href="https://github.com/DianMaoBingDu/ShuMao" style="color: #e74c3c;">GitHub</a></p>
+
+        <h2 style="margin-top: 2rem; color: #333;">Resources & Credits</h2>
+        <ul style="padding-left: 20px;">
+            <li><a href="https://www.mdbg.net/chinese/dictionary?page=cc-cedict" style="color: #e74c3c;">CC-CEDICT</a>:
+                Chinese-English dictionary</li>
+            <li><a href="https://hanziwriter.org/" style="color: #e74c3c;">Hanzi Writer</a>: Stroke order animations
+            </li>
+            <li><a href="https://github.com/gugray/hanzi_lookup" style="color: #e74c3c;">HanziLookup</a>: Chinese
+                handwriting recognition</li>
+            <li><a href="https://tatoeba.org/" style="color: #e74c3c;">Tatoeba</a>: Example translated sentences</li>
+            <li><a href="https://github.com/ivankra/hsk30" style="color: #e74c3c;">HSK 3.0 Vocabulary</a>: HSK 3.0 word
+                tagging</li>
+            <li><a href="https://github.com/fxsjy/jieba" style="color: #e74c3c;">jieba</a>: Chinese word segmentation
+            </li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    /* Reuse header styles */
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        margin-bottom: 2rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .logo-img {
+        height: 40px;
+        margin-right: 10px;
+    }
+
+    .site-title {
+        font-size: 1.5rem;
+        color: #333;
+        margin: 0;
+    }
+
+    .main-nav {
+        display: flex;
+        gap: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #666;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .nav-link:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    .analyze-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        text-align: center;
+        color: #333;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 1rem;
+    }
+</style>
+{% endblock %}

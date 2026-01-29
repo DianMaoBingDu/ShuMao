@@ -12,3 +12,4 @@ Dictionary entries are queried from a SQLite database combining data from multip
 [HanziLookup](https://github.com/gugray/hanzi_lookup): Chinese handwriting recognition
 [Tatoeba](https://tatoeba.org/): Example translated sentences
 [HSK 3.0 Vocabulary](https://github.com/ivankra/hsk30): HSK 3.0 word tagging
+[jieba](https://github.com/fxsjy/jieba): Chinese word segmentation

@@ -37,6 +37,10 @@ def get_example_sentences(characters, limit=5):
     return query_db(sql, [f"%{characters}%", limit])
 
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 @app.route('/search')
 def search():
     query = request.args.get('q', '').strip()
@@ -254,3 +258,62 @@ def search():
                          total_pages=total_pages,
                          total_results=total_results,
                          results_per_page=RESULTS_PER_PAGE)
+
+@app.route('/analyze')
+def analyze():
+    import jieba
+    import jieba.posseg as pseg
+    
+    # Check if 'text' parameter exists in the URL
+    if 'text' in request.args:
+        text = request.args.get('text', '').strip()
+        # If text is empty (user submitted empty form), use default
+        if not text:
+            text = "我喜欢可爱的猫"
+    else:
+        # Initial page load without query param
+        text = ""
+    
+    if not text:
+        return render_template('analyze.html', analyzed_segments=[])
+    
+    # Segment and POS tag
+    segments = pseg.cut(text)
+    
+    analyzed_segments = []
+    
+    db = get_db()
+    
+    for word, flag in segments:
+        # Skip purely whitespace segments if you want, or keep them for formatting
+        if not word.strip():
+            analyzed_segments.append({
+                'word': word,
+                'pos': 'space',
+                'definitions': None
+            })
+            continue
+            
+        # Query dictionary for this word
+        # We try exact match first
+        row = query_db('SELECT * FROM dictionary WHERE simplified = ? OR traditional = ? LIMIT 1', [word, word], one=True)
+        
+        segment_data = {
+            'word': word,
+            'pos': flag,
+            'pinyin': '',
+            'definitions': '',
+            'hsk_level': 0
+        }
+        
+        if row:
+            segment_data['pinyin'] = row['pinyin_marks']
+            segment_data['definitions'] = row['definitions']
+            segment_data['hsk_level'] = row['hsk_level']
+        else:
+            # Fallback: maybe it's punctuation or a name not in dict
+            pass
+            
+        analyzed_segments.append(segment_data)
+        
+    return render_template('analyze.html', text=text, analyzed_segments=analyzed_segments)

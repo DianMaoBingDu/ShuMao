@@ -605,6 +605,34 @@ footer a {
     text-decoration: none;
 }
 
+/* Navigation Links */
+.main-nav {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.nav-link:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.nav-link.active {
+    color: #e74c3c;
+    background-color: #fceceb;
+}
+
+/* Footer */
 /* Background Animation */
 #catboy-container {
     position: fixed;
