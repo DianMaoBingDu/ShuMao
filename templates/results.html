@@ -241,6 +241,12 @@
                         showOutline: true,
                         strokeAnimationSpeed: 2,
                         delayBetweenStrokes: 100,
+                        charDataLoader: function (char, onComplete) {
+                            fetch("{{ url_for('static', filename='hanzi-writer-data') }}/" + char + ".json")
+                                .then(res => res.json())
+                                .then(onComplete)
+                                .catch(console.error);
+                        }
                     });
                     container.onclick = () => writer.animateCharacter();
                     writer.showCharacter(); // Show immediately instead of animating
