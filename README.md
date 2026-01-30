@@ -8,8 +8,13 @@ Dictionary entries are queried from a SQLite database combining data from multip
 
 ## Resources
 [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict): Chinese-English dictionary
+
 [Hanzi Writer](https://hanziwriter.org/): Stroke order animations
+
 [HanziLookup](https://github.com/gugray/hanzi_lookup): Chinese handwriting recognition
+
 [Tatoeba](https://tatoeba.org/): Example translated sentences
+
 [HSK 3.0 Vocabulary](https://github.com/ivankra/hsk30): HSK 3.0 word tagging
+
 [jieba](https://github.com/fxsjy/jieba): Chinese word segmentation
