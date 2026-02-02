@@ -228,14 +228,51 @@ def search():
                 if char in char_cache:
                     result['character_breakdown'].append(char_cache[char])
                 else:
-                    # Fetch definitions for this specific character
-                    # Prefer exact matches where it's just this character
-                    char_data = query_db('SELECT * FROM dictionary WHERE simplified = ? AND length(simplified) = 1 LIMIT 1', [char], one=True)
-                    if char_data:
-                        char_info = dict(char_data)
-                        # Truncate definitions for the table
-                        short_defs = char_info['definitions'].split('/')
-                        char_info['short_definitions'] = "/".join(short_defs[:3])
+                    # Fetch ALL definitions for this specific character
+                    char_rows = query_db('SELECT * FROM dictionary WHERE simplified = ? AND length(simplified) = 1', [char])
+                    
+                    if char_rows:
+                        # Aggregate data from multiple entries (homographs) and GROUP BY PINYIN
+                        groups = {} # pinyin -> {'definitions': [], 'traditional': set()}
+                        
+                        # Use the first row as the base template
+                        char_info = dict(char_rows[0])
+                        
+                        for row in char_rows:
+                            pinyin = row['pinyin_marks']
+                            if not pinyin: pinyin = "Unknown"
+                            
+                            if pinyin not in groups:
+                                groups[pinyin] = {'definitions': [], 'traditional': set()}
+                            
+                            # Definitions
+                            defs = row['definitions'].split('/')
+                            for d in defs:
+                                if d and d not in groups[pinyin]['definitions']:
+                                    groups[pinyin]['definitions'].append(d)
+                                    
+                            # Traditional
+                            groups[pinyin]['traditional'].add(row['traditional'])
+                        
+                        # Convert groups to list for template
+                        grouped_entries = []
+                        for pin, data in groups.items():
+                            grouped_entries.append({
+                                'pinyin': pin,
+                                'definitions': data['definitions'],
+                                'traditional': sorted(list(data['traditional']))
+                            })
+                        
+                        # Sort by pinyin
+                        grouped_entries.sort(key=lambda x: x['pinyin'])
+                        
+                        char_info['grouped_entries'] = grouped_entries
+                        
+                        # Legacy fields for backward compatibility / fallback
+                        char_info['pinyin_marks'] = " / ".join([g['pinyin'] for g in grouped_entries])
+                        all_defs = [d for g in grouped_entries for d in g['definitions']]
+                        char_info['short_definitions'] = "/".join(all_defs[:4])
+                        
                         char_cache[char] = char_info
                         result['character_breakdown'].append(char_info)
                     else:
@@ -295,8 +332,8 @@ def analyze():
             continue
             
         # Query dictionary for this word
-        # We try exact match first
-        row = query_db('SELECT * FROM dictionary WHERE simplified = ? OR traditional = ? LIMIT 1', [word, word], one=True)
+        # We fetch ALL matches to handle homographs
+        rows = query_db('SELECT * FROM dictionary WHERE simplified = ? OR traditional = ?', [word, word])
         
         segment_data = {
             'word': word,
@@ -306,10 +343,42 @@ def analyze():
             'hsk_level': 0
         }
         
-        if row:
-            segment_data['pinyin'] = row['pinyin_marks']
-            segment_data['definitions'] = row['definitions']
-            segment_data['hsk_level'] = row['hsk_level']
+        if rows:
+            groups = {}
+            min_hsk = 100 
+            
+            for row in rows:
+                pinyin = row['pinyin_marks']
+                if not pinyin: pinyin = "Unknown"
+                
+                if pinyin not in groups:
+                    groups[pinyin] = {'definitions': []}
+                
+                defs = row['definitions'].split('/')
+                for d in defs:
+                    if d and d not in groups[pinyin]['definitions']:
+                        groups[pinyin]['definitions'].append(d)
+                
+                hsk = row['hsk_level']
+                if hsk > 0 and hsk < min_hsk:
+                    min_hsk = hsk
+            
+            # Convert to sorted list
+            grouped_entries = []
+            for pin, data in groups.items():
+                grouped_entries.append({
+                    'pinyin': pin,
+                    'definitions': data['definitions']
+                })
+            grouped_entries.sort(key=lambda x: x['pinyin'])
+            
+            segment_data['grouped_entries'] = grouped_entries
+            
+            # Backwards compatibility
+            segment_data['pinyin'] = " / ".join([g['pinyin'] for g in grouped_entries])
+            all_defs = [d for g in grouped_entries for d in g['definitions']]
+            segment_data['definitions'] = "/".join(all_defs)
+            segment_data['hsk_level'] = min_hsk if min_hsk != 100 else 0
         else:
             # Fallback: maybe it's punctuation or a name not in dict
             pass
