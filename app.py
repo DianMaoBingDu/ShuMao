@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, g
 import sqlite3
 import re
+import random
 
 app = Flask(__name__)
 DATABASE = 'resources/dictionary.db'
@@ -32,9 +33,13 @@ def get_example_sentences(characters, limit=5):
     """Get example sentences containing the given characters."""
     sql = '''SELECT chinese, english FROM sentences 
              WHERE chinese LIKE ? 
-             ORDER BY RANDOM() 
-             LIMIT ?'''
-    return query_db(sql, [f"%{characters}%", limit])
+             LIMIT 50'''
+    results = query_db(sql, [f"%{characters}%"])
+    if not results:
+        return []
+    
+    sample_size = min(limit, len(results))
+    return random.sample(results, sample_size)
 
 
 @app.route('/about')
@@ -85,17 +90,34 @@ def search():
         exact_rows = query_db(exact_sql, [query, query, clean_pinyin_no_tones])
     add_unique_results(exact_rows, 'exact')
     
+    # Helper for bound index queries (e.g., 'shi' -> 'shj')
+    def get_upper_bound(s):
+        if not s: return ''
+        return s[:-1] + chr(ord(s[-1]) + 1)
+
     # 2. Starts with
     if has_tones:
-        start_sql = 'SELECT * FROM dictionary WHERE (traditional LIKE ? OR simplified LIKE ? OR pinyin_numbered LIKE ?)'
-        like_query = f"{query}%"
-        like_pinyin = f"{clean_query}%"
-        start_rows = query_db(start_sql, [like_query, like_query, like_pinyin])
+        start_sql = '''
+            SELECT * FROM dictionary WHERE 
+            (traditional >= ? AND traditional < ?) OR 
+            (simplified >= ? AND simplified < ?) OR 
+            (pinyin_numbered >= ? AND pinyin_numbered < ?) 
+            LIMIT 500
+        '''
+        query_upper = get_upper_bound(query)
+        pinyin_upper = get_upper_bound(clean_query)
+        start_rows = query_db(start_sql, [query, query_upper, query, query_upper, clean_query, pinyin_upper])
     else:
-        start_sql = 'SELECT * FROM dictionary WHERE (traditional LIKE ? OR simplified LIKE ? OR pinyin_clean LIKE ?)'
-        like_query = f"{query}%"
-        like_pinyin = f"{clean_pinyin_no_tones}%"
-        start_rows = query_db(start_sql, [like_query, like_query, like_pinyin])
+        start_sql = '''
+            SELECT * FROM dictionary WHERE 
+            (traditional >= ? AND traditional < ?) OR 
+            (simplified >= ? AND simplified < ?) OR 
+            (pinyin_clean >= ? AND pinyin_clean < ?) 
+            LIMIT 500
+        '''
+        query_upper = get_upper_bound(query)
+        pinyin_upper = get_upper_bound(clean_pinyin_no_tones)
+        start_rows = query_db(start_sql, [query, query_upper, query, query_upper, clean_pinyin_no_tones, pinyin_upper])
     add_unique_results(start_rows, 'starts_with')
     
     # 3. English FTS
@@ -105,6 +127,7 @@ def search():
         JOIN dictionary_fts f ON d.id = f.rowid
         WHERE dictionary_fts MATCH ? 
         ORDER BY rank 
+        LIMIT 500
     '''
     fts_query = f'"{query}"'
     try:
@@ -209,6 +232,22 @@ def search():
     end_idx = start_idx + RESULTS_PER_PAGE
     paginated_results = all_results[start_idx:end_idx]
     
+    prefetched_chars = {}
+    chars_to_fetch = set()
+    for result in paginated_results:
+        if len(result['simplified']) >= 2:
+            for char in result['simplified']:
+                chars_to_fetch.add(char)
+                
+    if chars_to_fetch:
+        placeholders = ','.join(['?'] * len(chars_to_fetch))
+        char_rows = query_db(f'SELECT * FROM dictionary WHERE simplified IN ({placeholders}) AND length(simplified) = 1', list(chars_to_fetch))
+        for row in char_rows:
+            char = row['simplified']
+            if char not in prefetched_chars:
+                prefetched_chars[char] = []
+            prefetched_chars[char].append(row)
+
     # Get example sentences and character breakdown for each result
     char_cache = {}
     for result in paginated_results:
@@ -228,8 +267,8 @@ def search():
                 if char in char_cache:
                     result['character_breakdown'].append(char_cache[char])
                 else:
-                    # Fetch ALL definitions for this specific character
-                    char_rows = query_db('SELECT * FROM dictionary WHERE simplified = ? AND length(simplified) = 1', [char])
+                    # Fetch ALL definitions for this specific character from pre-fetched data
+                    char_rows = prefetched_chars.get(char, [])
                     
                     if char_rows:
                         # Aggregate data from multiple entries (homographs) and GROUP BY PINYIN
