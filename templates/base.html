@@ -5,11 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}书猫 ShuMao{% endblock %}</title>
+    <link rel="preload" href="{{ url_for('static', filename='hanzi_lookup_bg.wasm') }}" as="fetch"
+        type="application/wasm" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
-    <script src="{{ url_for('static', filename='hanzi-writer.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='hanzi_lookup.js') }}"></script>
-    <script src="{{ url_for('static', filename='handwriting.js') }}"></script>
+    <script src="{{ url_for('static', filename='hanzi-writer.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='hanzi_lookup.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='handwriting.js') }}" defer></script>
     <script>
         // Initialize hanzi_lookup WASM
         window.addEventListener('DOMContentLoaded', () => {
