@@ -2,9 +2,20 @@ from flask import Flask, render_template, request, g
 import sqlite3
 import re
 import random
+import os
+import jieba
+import jieba.posseg as pseg
 
 app = Flask(__name__)
 DATABASE = 'resources/dictionary.db'
+
+# Load custom dictionary for jieba
+custom_dict_path = os.path.join(os.path.dirname(__file__), 'resources', 'jieba_custom_dict.txt')
+if os.path.exists(custom_dict_path):
+    jieba.set_dictionary(custom_dict_path)
+    print("Custom jieba dictionary loaded")
+else:
+    print("Custom jieba dictionary not found")
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -337,8 +348,6 @@ def search():
 
 @app.route('/analyze')
 def analyze():
-    import jieba
-    import jieba.posseg as pseg
     
     # Check if 'text' parameter exists in the URL
     if 'text' in request.args:
