@@ -3,19 +3,21 @@ import sqlite3
 import re
 import random
 import os
-import jieba
-import jieba.posseg as pseg
+import stanza
 
 app = Flask(__name__)
 DATABASE = 'resources/dictionary.db'
 
-# Load custom dictionary for jieba
-custom_dict_path = os.path.join(os.path.dirname(__file__), 'resources', 'jieba_custom_dict.txt')
-if os.path.exists(custom_dict_path):
-    jieba.set_dictionary(custom_dict_path)
-    print("Custom jieba dictionary loaded")
-else:
-    print("Custom jieba dictionary not found")
+# Initialize Stanza locally
+stanza_model_dir = os.path.join(os.path.dirname(__file__), 'resources', 'stanza_resources')
+if not os.path.exists(stanza_model_dir):
+    os.makedirs(stanza_model_dir, exist_ok=True)
+    stanza.download('zh', model_dir=stanza_model_dir)
+
+# Initialize global pipeline to keep it in memory
+print("Loading Stanza pipeline...")
+nlp = stanza.Pipeline('zh', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
+print("Stanza pipeline loaded!")
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -346,6 +348,27 @@ def search():
                          total_results=total_results,
                          results_per_page=RESULTS_PER_PAGE)
 
+POS_MAPPING = {
+    'ADJ': 'Adjective',
+    'ADP': 'Adposition',
+    'ADV': 'Adverb',
+    'AUX': 'Auxiliary',
+    'CCONJ': 'Coordinating Conjunction',
+    'DET': 'Determiner',
+    'INTJ': 'Interjection',
+    'NOUN': 'Noun',
+    'NUM': 'Numeral',
+    'PART': 'Particle',
+    'PRON': 'Pronoun',
+    'PROPN': 'Proper Noun',
+    'PUNCT': 'Punctuation',
+    'SCONJ': 'Subordinating Conjunction',
+    'SYM': 'Symbol',
+    'VERB': 'Verb',
+    'X': 'Other',
+    'Space': 'Space'
+}
+
 @app.route('/analyze')
 def analyze():
     
@@ -362,75 +385,82 @@ def analyze():
     if not text:
         return render_template('analyze.html', analyzed_segments=[])
     
-    # Segment and POS tag
-    segments = pseg.cut(text)
+    # Process text with Stanza
+    doc = nlp(text)
     
     analyzed_segments = []
     
     db = get_db()
     
-    for word, flag in segments:
-        # Skip purely whitespace segments if you want, or keep them for formatting
-        if not word.strip():
-            analyzed_segments.append({
-                'word': word,
-                'pos': 'space',
-                'definitions': None
-            })
-            continue
-            
-        # Query dictionary for this word
-        # We fetch ALL matches to handle homographs
-        rows = query_db('SELECT * FROM dictionary WHERE simplified = ? OR traditional = ?', [word, word])
-        
-        segment_data = {
-            'word': word,
-            'pos': flag,
-            'pinyin': '',
-            'definitions': '',
-            'hsk_level': 0
-        }
-        
-        if rows:
-            groups = {}
-            min_hsk = 100 
-            
-            for row in rows:
-                pinyin = row['pinyin_marks']
-                if not pinyin: pinyin = "Unknown"
-                
-                if pinyin not in groups:
-                    groups[pinyin] = {'definitions': []}
-                
-                defs = row['definitions'].split('/')
-                for d in defs:
-                    if d and d not in groups[pinyin]['definitions']:
-                        groups[pinyin]['definitions'].append(d)
-                
-                hsk = row['hsk_level']
-                if hsk > 0 and hsk < min_hsk:
-                    min_hsk = hsk
-            
-            # Convert to sorted list
-            grouped_entries = []
-            for pin, data in groups.items():
-                grouped_entries.append({
-                    'pinyin': pin,
-                    'definitions': data['definitions']
+    for sentence in doc.sentences:
+        for word_obj in sentence.words:
+            word = word_obj.text
+            flag = word_obj.upos  # Universal POS tag
+            # Get human readable POS tag
+            human_pos = POS_MAPPING.get(flag, flag)
+
+            # Skip purely whitespace segments if you want, or keep them for formatting
+            if not word.strip():
+                analyzed_segments.append({
+                    'word': word,
+                    'pos': 'Space',
+                    'definitions': None
                 })
-            grouped_entries.sort(key=lambda x: x['pinyin'])
+                continue
+                
+            # Query dictionary for this word
+            # We fetch ALL matches to handle homographs
+            rows = query_db('SELECT * FROM dictionary WHERE simplified = ? OR traditional = ?', [word, word])
             
-            segment_data['grouped_entries'] = grouped_entries
+            segment_data = {
+                'word': word,
+                'pos': flag,
+                'human_pos': human_pos,
+                'pinyin': '',
+                'definitions': '',
+                'hsk_level': 0
+            }
             
-            # Backwards compatibility
-            segment_data['pinyin'] = " / ".join([g['pinyin'] for g in grouped_entries])
-            all_defs = [d for g in grouped_entries for d in g['definitions']]
-            segment_data['definitions'] = "/".join(all_defs)
-            segment_data['hsk_level'] = min_hsk if min_hsk != 100 else 0
-        else:
-            # Fallback: maybe it's punctuation or a name not in dict
-            pass
-            
-        analyzed_segments.append(segment_data)
+            if rows:
+                groups = {}
+                min_hsk = 100 
+                
+                for row in rows:
+                    pinyin = row['pinyin_marks']
+                    if not pinyin: pinyin = "Unknown"
+                    
+                    if pinyin not in groups:
+                        groups[pinyin] = {'definitions': []}
+                    
+                    defs = row['definitions'].split('/')
+                    for d in defs:
+                        if d and d not in groups[pinyin]['definitions']:
+                            groups[pinyin]['definitions'].append(d)
+                    
+                    hsk = row['hsk_level']
+                    if hsk > 0 and hsk < min_hsk:
+                        min_hsk = hsk
+                
+                # Convert to sorted list
+                grouped_entries = []
+                for pin, data in groups.items():
+                    grouped_entries.append({
+                        'pinyin': pin,
+                        'definitions': data['definitions']
+                    })
+                grouped_entries.sort(key=lambda x: x['pinyin'])
+                
+                segment_data['grouped_entries'] = grouped_entries
+                
+                # Backwards compatibility
+                segment_data['pinyin'] = " / ".join([g['pinyin'] for g in grouped_entries])
+                all_defs = [d for g in grouped_entries for d in g['definitions']]
+                segment_data['definitions'] = "/".join(all_defs)
+                segment_data['hsk_level'] = min_hsk if min_hsk != 100 else 0
+            else:
+                # Fallback: maybe it's punctuation or a name not in dict
+                pass
+                
+            analyzed_segments.append(segment_data)
         
     return render_template('analyze.html', text=text, analyzed_segments=analyzed_segments)
