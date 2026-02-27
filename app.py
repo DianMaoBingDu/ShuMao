@@ -12,12 +12,12 @@ DATABASE = 'resources/dictionary.db'
 stanza_model_dir = os.path.join(os.path.dirname(__file__), 'resources', 'stanza_resources')
 if not os.path.exists(stanza_model_dir):
     os.makedirs(stanza_model_dir, exist_ok=True)
-    stanza.download('zh', model_dir=stanza_model_dir)
 
-# Initialize global pipeline to keep it in memory
-print("Loading Stanza pipeline...")
-nlp = stanza.Pipeline('zh', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
-print("Stanza pipeline loaded!")
+# Initialize global pipelines to keep them in memory
+print("Loading Stanza pipelines...")
+nlp_hans = stanza.Pipeline('zh-hans', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
+nlp_hant = stanza.Pipeline('zh-hant', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
+print("Stanza pipelines loaded!")
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -375,18 +375,23 @@ def analyze():
     # Check if 'text' parameter exists in the URL
     if 'text' in request.args:
         text = request.args.get('text', '').strip()
+        model = request.args.get('model', 'hans').strip()
         # If text is empty (user submitted empty form), use default
         if not text:
             text = "我喜欢可爱的猫"
     else:
         # Initial page load without query param
         text = ""
+        model = "hans"
     
     if not text:
-        return render_template('analyze.html', analyzed_segments=[])
+        return render_template('analyze.html', analyzed_segments=[], model=model)
     
-    # Process text with Stanza
-    doc = nlp(text)
+    # Process text with Stanza using correct model
+    if model == 'hant':
+        doc = nlp_hant(text)
+    else:
+        doc = nlp_hans(text)
     
     analyzed_segments = []
     
@@ -463,4 +468,4 @@ def analyze():
                 
             analyzed_segments.append(segment_data)
         
-    return render_template('analyze.html', text=text, analyzed_segments=analyzed_segments)
+    return render_template('analyze.html', text=text, analyzed_segments=analyzed_segments, model=model)

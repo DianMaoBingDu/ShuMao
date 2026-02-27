@@ -16,7 +16,18 @@
 
 	<form action="/analyze" method="get" class="analyze-form">
 		<textarea name="text" id="analyzeInput" rows="4" placeholder="我喜欢可爱的猫">{{ text }}</textarea>
-		<button type="submit" class="analyze-btn">Analyze</button>
+		<div class="analyze-footer">
+			<div class="script-switch">
+				<label class="switch-label">
+					<input type="checkbox" name="model" value="hant" id="scriptToggle" {% if model=='hant' %}checked{%
+						endif %}>
+					<span class="switch-option" data-mode="simp" title="Simplified" style="order: 1;">简</span>
+					<span class="switch-slider" style="order: 2;"></span>
+					<span class="switch-option" data-mode="trad" title="Traditional" style="order: 3;">繁</span>
+				</label>
+			</div>
+			<button type="submit" class="analyze-btn">Analyze</button>
+		</div>
 	</form>
 
 	<script>
@@ -180,8 +191,14 @@
 		outline: none;
 	}
 
+	.analyze-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 10px;
+	}
+
 	.analyze-btn {
-		align-self: flex-end;
 		background-color: #e74c3c;
 		color: white;
 		border: none;

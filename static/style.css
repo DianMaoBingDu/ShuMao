@@ -203,9 +203,24 @@ button[type="submit"]:hover {
 }
 
 .switch-option {
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: #888;
-    font-weight: 500;
+    font-weight: 600;
+    transition: color 0.3s, background-color 0.3s;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f0f0f0;
+}
+
+#scriptToggle:not(:checked)~.switch-option[data-mode="simp"],
+#scriptToggle:checked~.switch-option[data-mode="trad"] {
+    color: var(--accent-color);
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .switch-slider {
@@ -215,6 +230,7 @@ button[type="submit"]:hover {
     background: #ccc;
     border-radius: 10px;
     transition: background 0.3s;
+    cursor: pointer;
 }
 
 #scriptToggle {
@@ -224,7 +240,7 @@ button[type="submit"]:hover {
     height: 0;
 }
 
-#scriptToggle:checked+.switch-slider {
+#scriptToggle:checked~.switch-slider {
     background: var(--accent-color);
 }
 
@@ -240,7 +256,7 @@ button[type="submit"]:hover {
     transition: transform 0.3s;
 }
 
-#scriptToggle:checked+.switch-slider::before {
+#scriptToggle:checked~.switch-slider::before {
     transform: translateX(20px);
 }
 
