@@ -15,8 +15,8 @@ if not os.path.exists(stanza_model_dir):
 
 # Initialize global pipelines to keep them in memory
 print("Loading Stanza pipelines...")
-nlp_hans = stanza.Pipeline('zh-hans', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
-nlp_hant = stanza.Pipeline('zh-hant', model_dir=stanza_model_dir, processors='tokenize,pos', use_gpu=False)
+nlp_hans = stanza.Pipeline('zh-hans', model_dir=stanza_model_dir, processors='tokenize,pos', download_method=None)
+nlp_hant = stanza.Pipeline('zh-hant', model_dir=stanza_model_dir, processors='tokenize,pos', download_method=None)
 print("Stanza pipelines loaded!")
 
 def get_db():
