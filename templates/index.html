@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="margin-top: 10vh;">
+<div class="homepage-wrapper">
     <header>
         <a href="/" class="logo-container">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="ShuMao Logo" class="logo-img">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="ShuMao Logo" class="logo-img homepage-logo">
             <h1 class="site-title">书猫 ShuMao</h1>
         </a>
     </header>
 
-    <div class="search-container">
+    <div class="search-container homepage-card">
         <p class="tagline">The English-Chinese dictionary that meows back</p>
         <form action="/search" method="get" class="search-form">
             <div class="search-input-wrapper">
@@ -35,10 +35,10 @@
             </div>
             <button type="submit">Go</button>
         </form>
-        <p><b>NOTE</b>: This website is under active development and only available as a test environment.</p>
-        <div class="footer-links" style="margin-top: 15px; font-size: 0.9em;">
-            <a href="/about" style="margin-right: 15px; color: #e74c3c; text-decoration: none;">About</a>
-            <a href="/analyze" style="color: #e74c3c; text-decoration: none;">Sentence Analysis</a>
+        <div class="homepage-links">
+            <a href="/about" class="homepage-link">About ShuMao</a>
+            <span class="homepage-link-sep">&middot;</span>
+            <a href="/analyze" class="homepage-link">Sentence Analysis</a>
         </div>
     </div>
 
