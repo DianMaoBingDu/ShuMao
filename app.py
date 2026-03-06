@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, g
+from flask import Flask, render_template, request, g, redirect
 import sqlite3
 import re
 import random
 import os
 import stanza
+from PIL import Image
+import pytesseract
 
 app = Flask(__name__)
 DATABASE = 'resources/dictionary.db'
@@ -467,3 +469,19 @@ def analyze():
             analyzed_segments.append(segment_data)
 
     return render_template('analyze.html', text=text, analyzed_segments=analyzed_segments, model=model)
+
+
+@app.route('/ocr')
+def ocr_upload():
+    return render_template("ocr.html")
+
+@app.route('/ocr-upload', methods=['POST'])
+def ocr_upload_process():
+    if 'file' not in request.files:
+        print("Could not find file")
+        return redirect('/ocr')
+
+    file = request.files['file']
+    img = Image.open(file)
+    text = pytesseract.image_to_string(img)
+    return render_template("ocr.html", text=text)

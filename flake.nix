@@ -16,6 +16,8 @@
         (pkgs.python3.withPackages(p: with p; [
           flask
           stanza
+          pytesseract
+          pillow
         ]))
       ];
       

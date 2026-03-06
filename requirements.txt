@@ -1,2 +1,4 @@
 Flask>=3.1.2
 stanza>=1.11.0
+pytesseract
+pillow
