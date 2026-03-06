@@ -2,3 +2,4 @@ __pycache__/
 .venv/
 resources/
 static/hanzi-writer-data/
+flake.lock
